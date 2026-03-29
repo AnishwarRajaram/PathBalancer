@@ -1,14 +1,14 @@
 import torch
 import numpy as np
 from pathlib import Path
-from UNetForward import UNet
+from UNet_MobileV3 import MobileUNet
 from NuScenesBevDataset import NuScenesBevDataset
 import check_my_tensors as check  # This uses your existing visualization logic
 import os
 import time
 
 # --- CONFIGURATION ---
-MODEL_WEIGHTS = "unet_v4_weights.pth"
+MODEL_WEIGHTS = "unet_mobile_v1_weights.pth"
 INPUT_DIR = './processed_data/input_bev'
 GT_DIR = './processed_data/ground_truth'
 
@@ -56,7 +56,7 @@ def run_test():
         actual_end = TOTAL_SAMPLES
 
     # 3. Initialize and Load Model
-    model = UNet(n_channels=4, n_classes=4).to(device)
+    model = MobileUNet(n_classes=4).to(device)
     try:
         model.load_state_dict(torch.load(MODEL_WEIGHTS, map_location=device))
         print("Successfully loaded trained weights.")

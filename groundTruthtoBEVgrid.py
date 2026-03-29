@@ -5,25 +5,25 @@ from nuscenes.nuscenes import NuScenes
 
 # Define your Class Map
 CLASS_MAP = {
-    'vehicle.car': 1,
-    'vehicle.truck': 1,
-    'vehicle.bus.bendy': 1,
-    'vehicle.bus.rigid': 1,
-    'human.pedestrian.adult': 2,
-    'human.pedestrian.child': 2,
-    'movable_object.barrier': 3
+    'vehicle': 1,
+    'human.pedestrian': 2,
+    'movable_object': 3,
+    'static_object.bicycle_rack': 3
 }
 
-def get_bev_gt(nusc, sample_token, grid_res=0.5, grid_size=100,):
+def get_bev_gt(nusc, sample_token, grid_res=0.25, grid_size=100,):
     """
     Generates a (200, 200) integer grid where each pixel is a Class ID.
     """
-    sample = nusc.get('sample', sample_token)
-    pixel_count = int(grid_size / grid_res)
+    res = float(grid_res)
+    size = float(grid_size)
+    pixel_count = int(size / res)
+    
     gt_grid = np.zeros((pixel_count, pixel_count), dtype=np.uint8)
     
     # Use LIDAR_TOP as the coordinate reference
-    sd_record = nusc.get('sample_data', sample['data']['LIDAR_TOP'])
+    sample_rec = nusc.get('sample', sample_token)
+    sd_record = nusc.get('sample_data', sample_rec['data']['LIDAR_TOP'])
     _, boxes, _ = nusc.get_sample_data(sd_record['token'])
     
     for box in boxes:

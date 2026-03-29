@@ -2,6 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 import torch 
+import matplotlib.colors as mcolors
+
+cmap = mcolors.ListedColormap(['black', 'gray', 'blue', 'red', 'yellow'])
 
 sample_token = "356d81f38dd9473ba590f39e266f54e5"
 
@@ -14,8 +17,8 @@ def visualize_processed_data(prediction = None, sample_token = sample_token, inp
     y_data = np.load(y_path) # (200, 200)
     
     # 2. Create a plot with 4 subplots
-    n_cols = 5 if prediction is not None else 4
-    fig, axes = plt.subplots(1, n_cols, figsize=(n_cols * 4, 5))
+    n_cols = 6 if prediction is not None else 4
+    fig, axes = plt.subplots(1, n_cols, figsize=(n_cols * 4, 6))
     
     # Channel 0: Height
     axes[0].imshow(x_data[:, :, 0], cmap='viridis')
@@ -29,10 +32,17 @@ def visualize_processed_data(prediction = None, sample_token = sample_token, inp
     axes[2].imshow(x_data[:, :, 2], cmap='inferno')
     axes[2].set_title("Input: Density Channel")
     
+    
+    # Channel 3: Roughness 
+    # On a good road, this should be mostly DARK (near 0)
+    # Curbs, cars, and debris should be BRIGHT (High variance)
+    axes[3].imshow(x_data[:, :, 3], cmap='hot')
+    axes[3].set_title("Channel 3: Surface Roughness")
+    
     # Ground Truth: Classes
     # We use 'tab10' colormap to clearly see different integer IDs
-    axes[3].imshow(y_data, cmap='tab10', vmin=0, vmax=10)
-    axes[3].set_title("Ground Truth: Class IDs")
+    axes[4].imshow(y_data, cmap='tab10', vmin=0, vmax=3)
+    axes[4].set_title("Ground Truth: Class IDs")
 
     if prediction is not None:
         
@@ -45,8 +55,8 @@ def visualize_processed_data(prediction = None, sample_token = sample_token, inp
 
         
         
-        axes[4].imshow(prediction, cmap='tab10', vmin=0, vmax=10)
-        axes[4].set_title("Prediction")
+        axes[5].imshow(prediction, cmap='tab10', vmin=0, vmax=10)
+        axes[5].set_title("Prediction")
     
     
     for ax in axes:

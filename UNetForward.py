@@ -18,12 +18,13 @@ class UNetBlock(nn.Module):
         return self.conv(x)
 
 class UNet(nn.Module):
-    def __init__(self, n_channels=3, n_classes=4):
+    def __init__(self, n_channels=4, n_classes=4):
         super(UNet, self).__init__()
         # Encoder (Downsampling)
         self.inc = UNetBlock(n_channels, 64)
         self.down1 = nn.Sequential(nn.MaxPool2d(2), UNetBlock(64, 128))
         self.down2 = nn.Sequential(nn.MaxPool2d(2), UNetBlock(128, 256))
+        self.down3 = nn.Sequential(nn.MaxPool2d(2), UNetBlock(256, 512))
         
         # Decoder (Upsampling)
         self.up1 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
@@ -40,6 +41,7 @@ class UNet(nn.Module):
         x1 = self.inc(x)
         x2 = self.down1(x1)
         x3 = self.down2(x2)
+        x4 = self.down3(x3)
         
         # Forward through Decoder with Skip Connections
         u1 = self.up1(x3)
