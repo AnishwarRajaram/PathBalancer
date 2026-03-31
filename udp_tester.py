@@ -7,7 +7,7 @@ UDP_IP = "127.0.0.1"
 UDP_PORT = 2368
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-print("🚀 Simulating VLP-16 LiDAR stream... Start modularizer.py now!")
+print("Simulating VLP-16 LiDAR stream... Start modularizer.py now!")
 
 while True:
     # A standard packet has 12 blocks

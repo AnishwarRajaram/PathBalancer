@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def plot_training_results(csv_path="training_log_4.csv"):
+def plot_training_results(csv_path="training_log_mobile_v1.csv"):
     df = pd.read_csv(csv_path)
     
     fig, ax1 = plt.subplots(figsize=(10, 6))
