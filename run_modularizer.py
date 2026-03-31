@@ -29,22 +29,30 @@ def signal_handler(sig, frame):
 def parse_lidar_packet(data):
     points = []
     try:
-        # Simplified parser for VLP-16 style packets
+        # A standard packet is 1206 bytes. Let's just scan for points.
+        # VLP-16: 12 blocks, each has 2 firings of 16 channels.
         for i in range(12):
             block_offset = i * 100
-            azimuth = struct.unpack("<H", data[block_offset+2:block_offset+4])[0] / 100.0
-            az_rad = np.deg2rad(azimuth)
+            # Skip the 2-byte header (0xFFEE)
+            azimuth_raw = struct.unpack("<H", data[block_offset+2:block_offset+4])[0]
+            az_rad = np.deg2rad(azimuth_raw / 100.0)
+
             for j in range(32):
-                point_offset = block_offset + 4 + (j * 3)
-                distance = struct.unpack("<H", data[point_offset:point_offset+2])[0] * 0.002
-                intensity = data[point_offset+2]
-                if distance > 1.0:
+                # Distance is 2 bytes, Intensity is 1 byte = 3 bytes total
+                off = block_offset + 4 + (j * 3)
+                dist_raw = struct.unpack("<H", data[off:off+2])[0]
+                distance = dist_raw * 0.002 # Convert to meters
+                intensity = data[off+2]
+
+                # CRITICAL: If distance is 0, the point is invalid. 
+                # Your tester was sending 5.0m, so this should pass.
+                if 0.5 < distance < 70.0: 
                     x = distance * np.cos(az_rad)
                     y = distance * np.sin(az_rad)
-                    z = 0 # Vertical angle parsing can be added based on laser ID j
+                    z = -1.0 # Static Z for testing
                     points.append((x, y, z, intensity))
-    except Exception:
-        pass 
+    except Exception as e:
+        print(f"Parser Error: {e}")
     return points
 
 def udp_listener():
@@ -61,6 +69,8 @@ def udp_listener():
             points = parse_lidar_packet(data) 
             with grid_lock:
                 for x, y, z, intensity in points:
+                    if len(points) > 0:
+                        print(f"DEBUG: Received {len(points)} points. Last PX/PY: {px}, {py}")
                     px = int((-y / GRID_RES) + (PIXEL_COUNT / 2))
                     py = int((-x / GRID_RES) + (PIXEL_COUNT / 2))
                     if 0 <= px < PIXEL_COUNT and 0 <= py < PIXEL_COUNT:
@@ -82,33 +92,28 @@ def log_driving_decision(preds):
     Assumes Class IDs: 0: Background/Road, 1: Vehicle, 2: Pedestrian, 3: Obstacle
     """
     center = PIXEL_COUNT // 2
-    # Define ROI: 4 meters wide (16 pixels) and 10 meters forward (40 pixels)
-    # Adjust indexing based on your coordinate mapping
-    roi_width = 8 
-    roi_depth = 40
-    front_roi = preds[center - roi_width : center + roi_width, center : center + roi_depth]
     
-    # Count detections in the critical path
-    v_pixels = np.sum(front_roi == 1)
-    p_pixels = np.sum(front_roi == 2)
-    o_pixels = np.sum(front_roi == 3)
+    # Let's look at the WHOLE front half of the grid for the demo
+    # From y=200 to y=400 (everything in front)
+    front_half = preds[:, center:] 
     
-    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    v_pixels = np.sum(front_half == 1)
+    p_pixels = np.sum(front_half == 2)
+    o_pixels = np.sum(front_half == 3)
     
-    # Simple Threshold Logic
+    timestamp = time.strftime("%H:%M:%S")
+    
+    # If the AI sees MORE than 100 pixels of any obstacle in the front half:
     decision = "PROCEED"
-    if p_pixels > 2:
-        decision = "EMERGENCY_BRAKE_PEDESTRIAN"
-    elif v_pixels > 10 or o_pixels > 10:
-        decision = "STOP_OBSTACLE_AHEAD"
+    if p_pixels > 50:
+        decision = "STOP_PEDESTRIAN"
+    elif v_pixels > 100 or o_pixels > 100:
+        decision = "STOP_OBJECT_AHEAD"
 
-    log_entry = f"[{timestamp}] Decision: {decision} | V_px: {v_pixels} | P_px: {p_pixels} | O_px: {o_pixels}\n"
+    log_entry = f"[{timestamp}] {decision} | V:{v_pixels} P:{p_pixels} O:{o_pixels}\n"
     
-    try:
-        with open(LOG_FILE, "a") as f:
-            f.write(log_entry)
-    except Exception as e:
-        print(f"Logging error: {e}")
+    with open(LOG_FILE, "a") as f:
+        f.write(log_entry)
 
 def ai_brain():
     providers = ['CoreMLExecutionProvider', 'CPUExecutionProvider']
@@ -136,6 +141,11 @@ def ai_brain():
         outputs = session.run(None, {input_name: input_data})
         preds = np.argmax(outputs[0], axis=1).squeeze()
         
+        
+        if np.any(preds > 0):
+            print(f"DEBUG: AI DETECTED OBJECTS! Class counts: {np.unique(preds, return_counts=True)}")
+        else:
+            print("DEBUG: AI sees empty road (All Zeros)")
         # Log decision
         log_driving_decision(preds)
         
@@ -147,7 +157,7 @@ def ai_brain():
 if __name__ == "__main__":
     # Clear or initialize log file
     with open(LOG_FILE, "w") as f:
-        f.write("--- MONSTER TRUCK SESSION START ---\n")
+        f.write("--- SESSION START ---\n")
         
     signal.signal(signal.SIGINT, signal_handler)
     

@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 from UNet_MobileV3 import MobileUNet
 from NuScenesBevDataset import NuScenesBevDataset
-import check_my_tensors as check  # This uses your existing visualization logic
+import check_my_tensors as check  
 import os
 import time
 
@@ -64,7 +64,7 @@ def run_test():
         print("Error: .pth file not found. Did you run train_model() yet?")
         return
 
-    model.eval() # CRITICAL: Sets model to inference mode
+    model.eval() # Sets model to inference mode
 
     # 4. Loop through the specified range
     cumulative_loss = 0

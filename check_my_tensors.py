@@ -65,6 +65,6 @@ def visualize_processed_data(prediction = None, sample_token = sample_token, inp
     plt.tight_layout()
     plt.show()
 
-# Run it for one of your ready tokens
+# sample test
 if __name__ == "__main__":
     visualize_processed_data("356d81f38dd9473ba590f39e266f54e5")

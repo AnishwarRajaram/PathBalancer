@@ -19,7 +19,7 @@ def check_untrained_model(sample_token = sample_token):
     my_model.to(device)
     my_model.eval() # Set to evaluation mode
     with torch.no_grad(): # Disable backprop/gradient tracking
-        # 1. Load one of your .npy files
+        # 1. Load one of the .npy files
         x_data = np.load(f"./processed_data/input_bev/{sample_token}_x.npy")
         
         # 2. Prepare for PyTorch: (H, W, C) -> (1, C, H, W) 

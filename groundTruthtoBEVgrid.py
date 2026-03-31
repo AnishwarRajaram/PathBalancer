@@ -27,7 +27,7 @@ def get_bev_gt(nusc, sample_token, grid_res=0.25, grid_size=100,):
     _, boxes, _ = nusc.get_sample_data(sd_record['token'])
     
     for box in boxes:
-        # Determine the class ID from our map
+        # Determine the class ID from the map
         class_id = 0
         for key, value in CLASS_MAP.items():
             if key in box.name:
