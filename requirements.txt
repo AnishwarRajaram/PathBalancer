@@ -1,0 +1,10 @@
+numpy
+matplotlib
+torch
+torchvision
+pandas
+opencv-python
+nuscenes-devkit
+tqdm
+onnxruntime
+# Use onnxruntime-silicon if running specifically on Mac M-series
